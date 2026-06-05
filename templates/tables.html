@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title">
+    <div>
+        <h1>Просмотр таблиц</h1>
+        <p>Показано не больше {{ max_rows }} строк за один запрос.</p>
+    </div>
+</div>
+<section class="panel">
+    <form method="get" action="{{ url_for('tables') }}">
+        <div class="field">
+            <label for="table">Таблица</label>
+            <select id="table" name="table">
+                {% for item in tables %}
+                    <option value="{{ item.name }}" {% if item.name == table.name %}selected{% endif %}>
+                        {{ item.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="button-row">
+            <button type="submit">Открыть</button>
+            <a class="button subtle" href="{{ url_for('add_table', table_name=table.name) }}">Добавить строку</a>
+            {% if pk_column %}
+                <a class="button subtle" href="{{ url_for('update_table', table_name=table.name) }}">Обновить запись</a>
+            {% endif %}
+        </div>
+    </form>
+</section>
+<section class="panel">
+    <h2>{{ table.name }}</h2>
+    <form method="get" action="{{ url_for('tables') }}" style="margin-top: 14px;">
+        <input type="hidden" name="table" value="{{ table.name }}">
+        <div class="form-grid">
+            {% for column in table.columns %}
+                <div class="field">
+                    <label for="filter__{{ column.name }}">{{ column.name }}</label>
+                    <input id="filter__{{ column.name }}" name="filter__{{ column.name }}" value="{{ raw_filters.get(column.name, '') }}">
+                    <small>{{ column.data_type }}</small>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="button-row">
+            <button type="submit">Фильтровать</button>
+            <a class="button subtle" href="{{ url_for('tables', table=table.name) }}">Сбросить</a>
+        </div>
+    </form>
+</section>
+<section class="panel">
+    {% if rows %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        {% for header in headers %}
+                            <th>{{ header }}</th>
+                        {% endfor %}
+                        {% if pk_column %}
+                            <th>Действие</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                        <tr>
+                            {% for header in headers %}
+                                <td>{{ row[header] }}</td>
+                            {% endfor %}
+                            {% if pk_column %}
+                                <td>
+                                    <a href="{{ url_for('update_table', table_name=table.name, pk=raw_rows[loop.index0][pk_column.name]) }}">Изменить</a>
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>Строки не найдены.</p>
+    {% endif %}
+</section>
+{% endblock %}

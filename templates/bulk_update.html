@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title">
+    <div>
+        <h1>Групповое обновление</h1>
+        <p>{{ table.name }}</p>
+    </div>
+    <a class="button subtle" href="{{ url_for('bulk_update_index') }}">Выбрать другую таблицу</a>
+</div>
+<section class="panel">
+    <form method="post" action="{{ url_for('bulk_update_table', table_name=table.name) }}">
+        <div class="form-grid">
+            <div class="field">
+                <label for="set_column">Изменяемая колонка</label>
+                <select id="set_column" name="set_column">
+                    {% for column in updatable_columns %}
+                        <option value="{{ column.name }}" {% if form_values.get('set_column') == column.name %}selected{% endif %}>
+                            {{ column.name }} ({{ column.data_type }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="set_value">Новое значение</label>
+                <input id="set_value" name="set_value" value="{{ form_values.get('set_value', '') }}">
+            </div>
+            <div class="field">
+                <label for="filter_column">Колонка фильтра</label>
+                <select id="filter_column" name="filter_column">
+                    {% for column in table.columns %}
+                        <option value="{{ column.name }}" {% if form_values.get('filter_column') == column.name %}selected{% endif %}>
+                            {{ column.name }} ({{ column.data_type }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="field">
+            <label for="filter_values">Значения фильтра</label>
+            <textarea id="filter_values" name="filter_values">{{ form_values.get('filter_values', '') }}</textarea>
+            <small>Разделители: запятая, точка с запятой или новая строка.</small>
+        </div>
+        <div class="button-row">
+            <button type="submit">Обновить</button>
+            <a class="button subtle" href="{{ url_for('tables', table=table.name) }}">К таблице</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

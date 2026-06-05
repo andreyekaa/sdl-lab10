@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title">
+    <div>
+        <h1>{{ heading }}</h1>
+        <p>{{ description }}</p>
+    </div>
+</div>
+<section class="grid">
+    {% for table in tables %}
+        <a class="action" href="{{ url_for(endpoint, table_name=table.name) }}">
+            <strong>{{ table.name }}</strong>
+            <span>{{ format_table_label(table) }}</span>
+        </a>
+    {% endfor %}
+</section>
+{% endblock %}

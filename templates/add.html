@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title">
+    <div>
+        <h1>Добавление строки</h1>
+        <p>{{ table.name }}</p>
+    </div>
+    <a class="button subtle" href="{{ url_for('add_index') }}">Выбрать другую таблицу</a>
+</div>
+<section class="panel">
+    <form method="post" action="{{ url_for('add_table', table_name=table.name) }}">
+        <div class="form-grid">
+            {% for column in columns %}
+                <div class="field">
+                    <label for="{{ column.name }}">{{ column.name }}</label>
+                    <input id="{{ column.name }}" name="{{ column.name }}" value="{{ form_values.get(column.name, '') }}">
+                    <small>
+                        {{ column.data_type }}
+                        {% if not column.is_nullable and not column.has_default %} / обязательно{% endif %}
+                        {% if column.has_default %} / default{% endif %}
+                        {% if column.is_nullable %} / nullable{% endif %}
+                    </small>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="button-row">
+            <button type="submit">Добавить</button>
+            <a class="button subtle" href="{{ url_for('tables', table=table.name) }}">К таблице</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

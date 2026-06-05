@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title">
+    <div>
+        <h1>Главная страница</h1>
+        <p>Подключение активно для пользователя <strong>{{ db_user }}</strong>.</p>
+    </div>
+</div>
+<section class="grid">
+    <a class="action" href="{{ url_for('tables') }}">
+        <strong>Просмотр таблиц</strong>
+        <span>Открыть строки таблицы и применить фильтры по колонкам.</span>
+    </a>
+    <a class="action" href="{{ url_for('add_index') }}">
+        <strong>Добавление строк</strong>
+        <span>Выбрать таблицу и вставить новую запись через форму.</span>
+    </a>
+    <a class="action" href="{{ url_for('update_index') }}">
+        <strong>Обновление записи</strong>
+        <span>Найти запись по первичному ключу и изменить значения.</span>
+    </a>
+    <a class="action" href="{{ url_for('bulk_update_index') }}">
+        <strong>Групповое обновление</strong>
+        <span>Обновить строки по безопасному условию IN (...).</span>
+    </a>
+</section>
+<section class="panel">
+    <p>Добро пожаловать. Здесь можно перейти к управлению данными, не показывая схему напрямую.</p>
+</section>
+{% endblock %}

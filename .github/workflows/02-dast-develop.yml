@@ -1,0 +1,67 @@
+name: 02 DAST on develop merge
+
+on:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  dast:
+    name: OWASP ZAP DAST
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Prepare runtime env file
+        run: |
+          cat > .env <<'ENV'
+          APP_LOG_FILE=/logs/app.log
+          APP_CONFIG_PATH=/app/config.yaml
+          APP_HOST=0.0.0.0
+          APP_PORT=8000
+          FLASK_SECRET_KEY=ci-coursework-secret
+          ENV
+
+      - name: Build and start application
+        run: |
+          docker compose up -d --build
+          docker compose ps
+
+      - name: Wait for application
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8000/ > /dev/null; then
+              echo "Application is available"
+              exit 0
+            fi
+            echo "Waiting for application..."
+            sleep 2
+          done
+          docker compose logs
+          exit 1
+
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: 'http://localhost:8000'
+          allow_issue_writing: false
+          fail_action: false
+          artifact_name: zap-develop-report
+          cmd_options: '-a -r zap-develop.html -J zap-develop.json -w zap-develop.md'
+
+      - name: Upload compose logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compose-logs-develop
+          path: logs/
+
+      - name: Stop application
+        if: always()
+        run: docker compose down -v

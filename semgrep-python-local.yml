@@ -1,0 +1,36 @@
+rules:
+  - id: python-sql-string-formatting
+    languages:
+      - python
+    severity: WARNING
+    message: "SQL-запрос может формироваться через форматирование строки. Проверь, что пользовательские значения передаются параметрами, а имена таблиц/колонок экранируются."
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $CUR.execute($QUERY % ...)
+          - pattern: |
+              $CUR.execute($QUERY.format(...))
+          - pattern: |
+              $CUR.execute(f"...")
+
+  - id: python-yaml-unsafe-load
+    languages:
+      - python
+    severity: ERROR
+    message: "Используется yaml.load без SafeLoader. Для защиты от небезопасной десериализации лучше использовать yaml.safe_load."
+    pattern: yaml.load(...)
+
+  - id: python-subprocess-shell-true
+    languages:
+      - python
+    severity: ERROR
+    message: "subprocess с shell=True может привести к command injection, если туда попадёт пользовательский ввод."
+    pattern: subprocess.$FUNC(..., shell=True, ...)
+
+  - id: python-hardcoded-password
+    languages:
+      - python
+    severity: WARNING
+    message: "В коде может быть захардкоженный пароль или секрет. Лучше передавать секреты через переменные окружения или secret storage."
+    patterns:
+      - pattern-regex: '(?i)(password|passwd|pwd|secret|token)\s*=\s*["''][^"'']+["'']'

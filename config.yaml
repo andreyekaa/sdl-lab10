@@ -1,0 +1,5 @@
+host: db
+port: 5432
+dbname: event_hub
+sslmode: disable
+connect_timeout: 5

@@ -1,0 +1,113 @@
+name: 03 SAST and DAST on main merge
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sast:
+    name: Bandit and Semgrep SAST
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install SAST tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit semgrep
+
+      - name: Run Bandit
+        run: |
+          mkdir -p reports/sast
+          bandit -r . \
+            -x './pg_data,./logs,./.git,./.venv,./venv' \
+            -f json \
+            -o reports/sast/bandit-main.json || true
+
+      - name: Run Semgrep
+        run: |
+          mkdir -p reports/sast
+          semgrep scan \
+            --config p/python \
+            --json \
+            --output reports/sast/semgrep-main.json \
+            --exclude pg_data \
+            --exclude logs \
+            --exclude .venv \
+            --exclude venv || true
+
+      - name: Upload SAST reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sast-main-reports
+          path: reports/sast/
+
+  dast:
+    name: OWASP ZAP DAST
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Prepare runtime env file
+        run: |
+          cat > .env <<'ENV'
+          APP_LOG_FILE=/logs/app.log
+          APP_CONFIG_PATH=/app/config.yaml
+          APP_HOST=0.0.0.0
+          APP_PORT=8000
+          FLASK_SECRET_KEY=ci-coursework-secret
+          ENV
+
+      - name: Build and start application
+        run: |
+          docker compose up -d --build
+          docker compose ps
+
+      - name: Wait for application
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8000/ > /dev/null; then
+              echo "Application is available"
+              exit 0
+            fi
+            echo "Waiting for application..."
+            sleep 2
+          done
+          docker compose logs
+          exit 1
+
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: 'http://localhost:8000'
+          allow_issue_writing: false
+          fail_action: false
+          artifact_name: zap-main-report
+          cmd_options: '-a -r zap-main.html -J zap-main.json -w zap-main.md'
+
+      - name: Upload compose logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compose-logs-main
+          path: logs/
+
+      - name: Stop application
+        if: always()
+        run: docker compose down -v

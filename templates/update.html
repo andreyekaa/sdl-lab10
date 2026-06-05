@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-title">
+    <div>
+        <h1>Обновление записи</h1>
+        <p>{{ table.name }}</p>
+    </div>
+    <a class="button subtle" href="{{ url_for('update_index') }}">Выбрать другую таблицу</a>
+</div>
+{% if not pk_column %}
+    <section class="panel">
+        <p>Для этой страницы нужна таблица с одним первичным ключом.</p>
+    </section>
+{% else %}
+    <section class="split">
+        <div class="panel">
+            <h2>Данные</h2>
+            {% if rows %}
+                <div class="table-wrap" style="margin-top: 14px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                {% for header in headers %}
+                                    <th>{{ header }}</th>
+                                {% endfor %}
+                                <th>Действие</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in rows %}
+                                <tr>
+                                    {% for header in headers %}
+                                        <td>{{ row[header] }}</td>
+                                    {% endfor %}
+                                    <td>
+                                        <a href="{{ url_for('update_table', table_name=table.name, pk=raw_rows[loop.index0][pk_column.name]) }}">Выбрать</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>Строки не найдены.</p>
+            {% endif %}
+        </div>
+        <aside class="panel">
+            <h2>Запись</h2>
+            <form method="get" action="{{ url_for('update_table', table_name=table.name) }}" style="margin-top: 14px;">
+                <div class="field">
+                    <label for="pk">{{ pk_column.name }}</label>
+                    <input id="pk" name="pk" value="{{ pk_raw }}">
+                    <small>{{ pk_column.data_type }}</small>
+                </div>
+                <button type="submit">Загрузить</button>
+            </form>
+            {% if row_values %}
+                <hr style="border:0;border-top:1px solid var(--border);margin:18px 0;">
+                <form method="post" action="{{ url_for('update_table', table_name=table.name) }}">
+                    <input type="hidden" name="pk" value="{{ pk_raw }}">
+                    {% for column in table.columns %}
+                        {% if column.name not in table.pk_columns %}
+                            <div class="field">
+                                <label for="{{ column.name }}">{{ column.name }}</label>
+                                <input id="{{ column.name }}" name="{{ column.name }}" value="{{ form_values.get(column.name, row_values.get(column.name, '')) }}">
+                                <small>{{ column.data_type }}{% if column.is_nullable %} / nullable{% endif %}</small>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                    <div class="button-row">
+                        <button type="submit">Сохранить</button>
+                        <a class="button subtle" href="{{ url_for('tables', table=table.name) }}">К таблице</a>
+                    </div>
+                </form>
+            {% endif %}
+        </aside>
+    </section>
+{% endif %}
+{% endblock %}

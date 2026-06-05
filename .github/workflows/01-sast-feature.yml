@@ -1,0 +1,55 @@
+name: 01 SAST on feature push
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+
+permissions:
+  contents: read
+
+jobs:
+  sast:
+    name: Bandit and Semgrep SAST
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install SAST tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit semgrep
+
+      - name: Run Bandit
+        run: |
+          mkdir -p reports/sast
+          bandit -r . \
+            -x './pg_data,./logs,./.git,./.venv,./venv' \
+            -f json \
+            -o reports/sast/bandit-feature.json || true
+
+      - name: Run Semgrep
+        run: |
+          mkdir -p reports/sast
+          semgrep scan \
+            --config p/python \
+            --json \
+            --output reports/sast/semgrep-feature.json \
+            --exclude pg_data \
+            --exclude logs \
+            --exclude .venv \
+            --exclude venv || true
+
+      - name: Upload SAST reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sast-feature-reports
+          path: reports/sast/
